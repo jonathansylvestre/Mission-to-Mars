@@ -18,7 +18,8 @@ def scrape_all():
         "news_paragraph": news_paragraph,
         "featured_image": featured_image(browser),
         "facts": mars_facts(),
-        "last_modified": dt.datetime.now()
+        "last_modified": dt.datetime.now(),
+        "hemisphere_image_urls": mars_hemis(browser)
     }
 
     # Stop webdriver and return data
@@ -100,3 +101,35 @@ if __name__ == "__main__":
 
     # If running as script, print scraped data
     print(scrape_all())
+
+def mars_hemis(browser):
+    url = 'https://marshemispheres.com/'
+    browser.visit(url)
+    hemisphere_image_urls = []
+    html = browser.html
+    main_page_soup = soup(html, 'html.parser')
+    pics_count = len(main_page_soup.select("div.item"))
+
+
+    # For loop over the link of each sample picture
+    for i in range(pics_count):
+        # Create an empty dict to hold the search results
+        hemispheres = {}
+        # Find link to picture and open it
+        link_image = main_page_soup.select("div.description a")[i].get('href')
+        browser.visit(f'https://marshemispheres.com/{link_image}')
+        # Parse the new html page w/ soup
+        html = browser.html
+        sample_image_soup = soup(html, 'html.parser')
+        # Get full image url
+        img_url_rel = sample_image_soup.select_one("div.downloads ul li a").get('href')
+        img_url = f'https://marshemispheres.com/{img_url_rel}'
+        # Get full image title
+        img_title = sample_image_soup.select_one("h2.title").get_text()
+        # Add results to dictionary
+        hemispheres = {'img_url': img_url, 'title': img_title}
+        # Append results dict to list
+        hemisphere_image_urls.append(hemispheres)
+        # Return to main page
+        browser.back()
+    return hemisphere_image_urls
